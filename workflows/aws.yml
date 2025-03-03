@@ -1,0 +1,46 @@
+name: aws
+
+on:
+  workflow_run:
+    workflows:
+      - docker    # Flujo del que depende
+    types:
+      - completed
+
+env:
+  FICHEROS: compose.yml
+  IMAGE_NAME: fastapiserver
+  IMAGE_TAG: latest
+
+jobs:
+
+  aws:
+    name: Deploy image to aws
+    # needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: copy docker compose via ssh key
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.AWS_HOSTNAME }}
+        username: ${{ secrets.AWS_USERNAME }}
+        port: 22 # ${{ secrets.PORT }}
+        key: ${{ secrets.AWS_PRIVATEKEY }}
+        source: ${{ env.FICHEROS }}
+        target: /home/admin
+    - name: script deploy docker services
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.AWS_HOSTNAME }}
+        username: ${{ secrets.AWS_USERNAME }}
+        key: ${{ secrets.AWS_PRIVATEKEY }}
+        port: 22  # ${{ secrets.PORT }}
+        # en este comando  "docker compose down --rmi local"  ¿Cómo determina docker las imágenes que borra? 
+        script: |
+            sleep 30
+            docker compose down api
+            docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            docker compose up -d traefik db whoami 
+            docker compose up -d api
+
