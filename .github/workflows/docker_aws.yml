@@ -58,11 +58,10 @@ jobs:
         key: ${{ secrets.AWS_PRIVATEKEY }}
         port: 22  # ${{ secrets.PORT }}
         script: |
-            sleep 30
-            docker compose down -f ${{ env.FILES }} api
-            docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-            docker compose -f {{ env.FILES }} up -d traefik db whoami 
-            docker compose -f {{ env.FILES }} up -d api
-
+          sleep 30
+          docker compose -f ${{ env.FILES }} down api
+          docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          docker compose -f ${{ env.FILES }} up -d traefik db whoami
+          docker compose -f ${{ env.FILES }} up -d api
 
 
